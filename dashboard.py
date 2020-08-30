@@ -279,8 +279,19 @@ st.title("A Distribuição de respiradores no Brasil durante a Pandemia")
 st.markdown("""
 
     
-   ## Introdução e definição do problema aqui.
+   ## Introdução e definição do problema aqui:
 
+   Neste artigo iremos analisar a distribuição de respiradores no Brasil a fim de expor e comparar as estratégias de compras efetuadas por cada Estado.
+    Assim, evidenciando aqueles que fizeram compras
+   com melhor custo-benefício e que tiveram maior crescimento na quantidade de respiradores por 100 mil habitantes. Além disso,
+    iremos comparar os preços oferecidos pelos fornecedores e destacar pedidos
+   que tiveram um custo que distoante do padrão.
+
+   Para essa análise, combinamos informações disponíveis em portais de dados abertos. Nosso objetivo é disponibilizar esses materiais de maneira clara e objetiva através de gráficos interativos para
+   o público em geral.
+
+
+    *Atualizado em: (30/08/2020).*
 """
 )
 
