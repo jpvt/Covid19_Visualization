@@ -5,6 +5,9 @@ import seaborn as sns
 import numpy as np
 import pydeck as pdk
 import plotly.express as px
+import geopandas
+from matplotlib import cm
+from matplotlib.colors import ListedColormap
 
 
 ## FUNCTIONS ###################################################################################################################################
@@ -98,6 +101,10 @@ def load_data(option):
 
         hab = pd.read_csv('resps.csv').drop(columns=['Unnamed: 0'])
         return hab
+
+    elif option == 'map':
+        df = pd.read_csv('dados_respiradores2.csv')
+        return df
     else:
         print('Wrong Option!')
         return 'Wrong Option!'
@@ -176,7 +183,7 @@ def plot_val_tot():
                     hover_data=['QT_TOT','VL_TOT'],color='PREÇO_MEDIO',
                     labels={'QT_TOT':'Qnt. de respiradores comprados','VL_TOT':'Valor total gasto com respiradores','PREÇO_MEDIO':'Valor Médio em reais (R$)', 'DESTINO':'Estado'},
                     height = 400, width = 1000,
-                    color_continuous_scale= px.colors.sequential.Teal
+                    color_continuous_scale= px.colors.sequential.Teal, title = 'Valor médio gasto com respirador '
                     )
 
     fig.update_traces(texttemplate='%{text:.2s}', textposition='outside')
@@ -242,6 +249,28 @@ def plot_resp_tot():
     figtot.update_yaxes(visible=True)
     st.plotly_chart(figtot, use_container_width=True)
 
+def selectMap(gdf, df, df_column_name, month = 0):
+    val_list = []
+    
+    if(month == 0):
+        for state in gdf['ESTADO']:
+            val_list.append(df[df_column_name].loc[df['State'] == state].sum())
+    else:
+        for state in gdf['ESTADO']:
+            if(len(df[df_column_name].loc[df['State'] == state].loc[df['Month'] == month].values) > 0):    
+                val_list.append(df[df_column_name].loc[df['State'] == state].loc[df['Month'] == month].values[0])
+            else:
+                val_list.append(0)
+        
+    gdf[df_column_name] = val_list
+    
+    return gdf
+
+
+def load_geodata(file_path):
+    gdf = geopandas.read_file(file_path)
+
+    return gdf
 
 ##########################################################################################################################################################################
 # Dashboard
@@ -250,8 +279,7 @@ st.title("A Distribuição de respiradores no Brasil durante a Pandemia")
 st.markdown("""
 
     
-   ## Introdução falando sobre os dados e a Análise.
-
+   ## Introdução e definição do problema aqui.
 
 """
 )
@@ -270,6 +298,11 @@ analise_box = st.selectbox('Escolha:', ('Análise de Gasto Total','Análise de F
 
 if analise_box == 'Análise de Gasto Total':
 
+    st.markdown("""
+    
+    
+    """")
+
     plot_val_tot()
 
     plot_resp_tot()
@@ -278,17 +311,47 @@ if analise_box == 'Análise de Gasto Total':
 
 elif analise_box == 'Análise de Gasto Mensal':
 
+    st.markdown("""
+    Na análise de gastos mensais, verificamos a quantidade de pedidos de respiradores que cada Estado fez em determinado mês,
+     o valor gasto com esses pedidos e quantidade total de respiradores em cada Estado.
+    """)
+
     box = st.selectbox('Mês', ('Abril','Maio','Junho','Julho','Agosto'))
     month_dict = {'Abril':4, 'Maio':5, 'Junho':6, 'Julho':7, 'Agosto':8}
     mes = month_dict[box]
+    selected_month = mes
 
-    plot_resp_mes(mes)
-    plot_val_mes(mes)
     plot_qnt_mes(mes)
+    plot_val_mes(mes)
+    plot_resp_mes(mes)
 
 elif analise_box == 'Análise de Fornecedores e Anomalias':
+
+    st.markdown(
+                """
+        Na análise de fornecedores e anomalias, é feita a detecção e identificação de contratos que destoam do conjunto analisado, ou seja,
+        que possuam valor de respiradores muito discrepantes e que talvez indiquem irregularidade no contrato. Além disso,
+         detalhamos o preço pago nos respiradores por fornecedor, tornando possível, além de verificar a regularidade,
+         investigar os casos relevantes.
+        """
+    )
 
 
     plot_fornecedores()
 
     show_anomalias()
+
+
+if st.checkbox('Mostrar as fontes de dados'):
+
+    st.markdown(
+        """
+        ---
+
+        ## Fontes: 
+
+        * Distribuição de respiradores antes da pandemia:[CNES - Recursos Físicos - Respiradores](http://tabnet.datasus.gov.br/cgi/tabcgi.exe?cnes/cnv/equipobr.def)
+        * Número de habitantes por estado: [SIDRA -IBGE](https://sidra.ibge.gov.br/tabela/6579)
+        * Distribuição de respiradores durante a pandemia: [PORTAL BRASILEIRO DE DADOS ABERTOS](http://dados.gov.br/dataset/distribuicao-de-respiradores)        
+        """
+    )

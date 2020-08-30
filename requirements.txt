@@ -5,3 +5,4 @@ seaborn==0.10.0
 numpy==1.18.1
 pydeck==0.5.0b1
 plotly==4.9.0
+geopandas==0.8.1
