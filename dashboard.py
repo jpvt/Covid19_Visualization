@@ -24,6 +24,7 @@ def load_data(option):
         df['DATA DE ENTREGA'] = df['DATA DE ENTREGA'].str.replace('/', '-', regex=False)
         df['VALOR'] = df['VALOR'].str.replace(',', '.', regex=False).astype(float)
         df['DATA'] = pd.to_datetime(df['DATA'], dayfirst = True)
+        df['FORNECEDOR'] = df['FORNECEDOR'].str.upper()
 
         gb = df.groupby('FORNECEDOR')
 
@@ -66,8 +67,24 @@ def load_data(option):
         return report3
     
     elif option == 'anomalia':
-        print('Under construction!')
-        return 'Under construction!'
+        df = pd.read_csv('distribuicao_respiradores.csv', delimiter = ';')
+        df = df[df['DATA DE ENTREGA'] != 'AGUARDANDO O MS']
+        df['DATA DE ENTREGA'] = df['DATA DE ENTREGA'].str.replace('/', '-', regex=False)
+        df['VALOR'] = df['VALOR'].str.replace(',', '.', regex=False).astype(float)
+        df['DATA'] = pd.to_datetime(df['DATA'], dayfirst = True)
+        df['FORNECEDOR'] = df['FORNECEDOR'].str.upper()
+
+
+        reais = np.array(df['VALOR'].values)
+        pedidos = np.array(df['QUANTIDADE'].values)
+
+
+        df['PREÇO_MEDIO_REG'] = reais/pedidos
+
+        caros = df[df['PREÇO_MEDIO_REG'] > 80000]
+        baratos = df[df['PREÇO_MEDIO_REG'] < 20000]
+
+        return caros, baratos
     else:
         print('Wrong Option!')
         return 'Wrong Option!'
@@ -79,7 +96,7 @@ def plot_fornecedores():
     fig2 = px.bar(report2, x='FORNECEDOR', y='PREÇO_MEDIO',
                 hover_data=['QT_TOT','VL_TOT'],color='PREÇO_MEDIO',
                 labels={'QT_TOT':'Qnt. de respiradores','VL_TOT':'Valor total dos respiradores','PREÇO_MEDIO':'Valor Médio em reais (R$)', 'FORNECEDOR':'Fornecedor'},
-                height = 400, width = 1000,
+                height = 800, width = 1600,
                 color_continuous_scale= px.colors.sequential.Blugrn
                 )
 
@@ -156,6 +173,13 @@ def plot_val_tot():
     fig.update_yaxes(visible=True)
     st.plotly_chart(fig, use_container_width=True)
 
+def show_anomalias():
+
+    caros, baratos = load_data('anomalia')
+    if st.checkbox('Ver respiradores que foram comprados por um valor alto'):
+        st.write(caros)
+    if st.checkbox('Ver respiradores que foram comprados por um valor baixo'):
+        st.write(baratos)
 
 ##########################################################################################################################################################################
 # Dashboard
@@ -178,6 +202,7 @@ st.sidebar.markdown(
 
 plot_fornecedores()
 
+show_anomalias()
 
 plot_val_tot()
 
