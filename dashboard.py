@@ -184,23 +184,26 @@ def show_anomalias():
 ##########################################################################################################################################################################
 # Dashboard
 
-st.title("Portal da Transparência COVID-19")
-st.markdown(
-    """
-    Deu certo aí Pardal ?
-    """
+st.title("A Distribuição de respiradores no Brasil durante a Pandemia")
+st.markdown("""
+
+    
+   ## Introdução falando sobre os dados e a Análise.
+
+
+"""
 )
 
 
-st.sidebar.title("Sidebar")
+st.sidebar.title("Tipos de Análise")
 st.sidebar.markdown(
     """
-    Escolha o que deseja observar
+    Aqui você pode selecionar que tipo de análise sobre a distribuição de respiradores você deseja visualizar. Basta escolher na caixa abaixo.
     """
 )
 
 
-analise_box = st.sidebar.selectbox('Tipo de Análise', ('Análise de Gastos Totais','Análise de Fornecedores e Anomalias','Análise de Gasto Mensal'))
+analise_box = st.sidebar.selectbox('Escolha:', ('Análise de Gasto Total','Análise de Fornecedores e Anomalias','Análise de Gasto Mensal'))
 
 if analise_box == 'Análise de Gastos Totais':
 
