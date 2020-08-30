@@ -299,9 +299,11 @@ analise_box = st.selectbox('Escolha:', ('Análise de Gasto Total','Análise de F
 if analise_box == 'Análise de Gasto Total':
 
     st.markdown("""
-    
-    
-    """")
+        Na análise de gastos totais, verificamos como foram direcionados os recursos em determinado estado durante o período da pandemia,
+         comparando a quantidade de respiradores antes da pandemia com a quantidade em no mês de agosto. Também analisamos o valor médio que cada Estado gastou por respirador, assim observando
+         que Estados gastaram de maneira eficiente com respiradores, assim como os Estados que tiveram custos elevados demais para um pouco aumento na quantidade de respiradores por 100 mil habitantes,
+         como por exemplo o Amazonas.
+    """)
 
     plot_val_tot()
 
