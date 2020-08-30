@@ -93,16 +93,16 @@ def load_data(option):
 def plot_fornecedores():
     report2 = load_data('fornecedor')
 
-    fig2 = px.bar(report2, x='FORNECEDOR', y='PREÇO_MEDIO',
+    fig2 = px.bar(report2, y='FORNECEDOR', x='PREÇO_MEDIO',
                 hover_data=['QT_TOT','VL_TOT'],color='PREÇO_MEDIO',
                 labels={'QT_TOT':'Qnt. de respiradores','VL_TOT':'Valor total dos respiradores','PREÇO_MEDIO':'Valor Médio em reais (R$)', 'FORNECEDOR':'Fornecedor'},
-                height = 800, width = 1600,
+                height = 800, width = 800,
                 color_continuous_scale= px.colors.sequential.Blugrn
                 )
 
     fig2.update(layout_coloraxis_showscale=False)
     fig2.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
-    fig2.update_xaxes(tickangle=45)
+    #fig2.update_xaxes(tickangle=45)
     fig2.update_yaxes(visible=True)
     st.plotly_chart(fig2, use_container_width=True)
 
@@ -200,13 +200,24 @@ st.sidebar.markdown(
 )
 
 
-plot_fornecedores()
+analise_box = st.sidebar.selectbox('Tipo de Análise', ('Análise de Gastos Totais','Análise de Fornecedores e Anomalias','Análise de Gasto Mensal'))
 
-show_anomalias()
+if analise_box == 'Análise de Gastos Totais':
 
-plot_val_tot()
+    plot_val_tot()
 
-mes = st.slider('Escolha o mês:', 4,8,8)
-plot_val_mes(mes)
+elif analise_box == 'Análise de Gasto Mensal':
 
-plot_qnt_mes(mes)
+    box = st.selectbox('Mês', ('Abril','Maio','Junho','Julho','Agosto'))
+    month_dict = {'Abril':4, 'Maio':5, 'Junho':6, 'Julho':7, 'Agosto':8}
+    mes = month_dict[box]
+
+    plot_val_mes(mes)
+    plot_qnt_mes(mes)
+
+elif analise_box == 'Análise de Fornecedores e Anomalias':
+
+
+    plot_fornecedores()
+
+    show_anomalias()
