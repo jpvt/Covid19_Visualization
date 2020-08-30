@@ -81,24 +81,13 @@ st.plotly_chart(fig, use_container_width=True)
 
 #st.sidebar.info(f'Foram carregadas {df.shape[0]} linhas')
 if st.sidebar.checkbox('Mostrar distribuição de respiradores'):
+    months = [4,5,6,7,8]
+    month_dict = {4 : 'Abril', 5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto'}
 
     # Load Data
     df = load_data('dados_dash2.csv')
     map_df = load_data('data_map2.csv')
 
-
-    fig = px.bar(report3, x='DESTINO', y='PREÇO_MEDIO',
-                hover_data=['QT_TOT','VL_TOT'],color='PREÇO_MEDIO',
-                labels={'QT_TOT':'Qnt. de respiradores comprados','VL_TOT':'Valor total gasto com respiradores','PREÇO_MEDIO':'Valor Médio em reais (R$)', 'DESTINO':'Estado'},
-                height = 400, width = 1000,
-                color_continuous_scale= px.colors.sequential.Blugrn
-                )
-
-    fig.update_traces(texttemplate='%{text:.2s}', textposition='outside')
-    fig.update(layout_coloraxis_showscale=False)
-    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
-    fig.update_xaxes(tickangle=45)
-    fig.update_yaxes(visible=True)
 
     # Slide bar do mês
     mes_selecionado = st.slider('Selecione o mês', 4, 8, 8)
@@ -112,83 +101,65 @@ if st.sidebar.checkbox('Mostrar distribuição de respiradores'):
 
     # Mapa
 
-    if st.checkbox('Mostrar Mapa # de compras por Estado'):
+    # if st.checkbox('Mostrar Mapa # de compras por Estado'):
 
-        # Define a layer to display on a map
-        layer = pdk.Layer(
-            "ScatterplotLayer",
-            map_selected,
-            pickable=True,
-            opacity=0.8,
-            stroked=True,
-            filled=True,
-            radius_scale=400,
-            radius_min_pixels=1,
-            radius_max_pixels=100,
-            line_width_min_pixels=1,
-            get_position='coordinates',
-            get_radius='QT_MES',
-            get_fill_color=[0, 0, 255],
-            get_line_color=[0, 0, 0],
-        )
+    #     # Define a layer to display on a map
+    #     layer = pdk.Layer(
+    #         "ScatterplotLayer",
+    #         map_selected,
+    #         pickable=True,
+    #         opacity=0.8,
+    #         stroked=True,
+    #         filled=True,
+    #         radius_scale=400,
+    #         radius_min_pixels=1,
+    #         radius_max_pixels=100,
+    #         line_width_min_pixels=1,
+    #         get_position='coordinates',
+    #         get_radius='QT_MES',
+    #         get_fill_color=[0, 0, 255],
+    #         get_line_color=[0, 0, 0],
+    #     )
 
-        # Set the viewport location
-        view_state = pdk.ViewState(latitude=-14.086503, longitude=-50.9322067, zoom=3, min_zoom=3, bearing=0, pitch=0)
-
-
-
-        st.header("Mapa de Distribuição de Respiradores")
-        st.pydeck_chart(pdk.Deck(layers=[layer], initial_view_state=view_state))
-
-    if st.checkbox('Mostrar Mapa valor gasto com respiradores por Estado'):
-
-        COLOR_BREWER_BLUE_SCALE = [
-            [240, 249, 232],
-            [204, 235, 197],
-            [168, 221, 181],
-            [123, 204, 196],
-            [67, 162, 202],
-            [8, 104, 172],
-
-        ]
-
-        heat = pdk.Layer(
-            "HeatmapLayer",
-            map_selected,
-            opacity=1,
-            get_position='coordinates',
-            aggregation='"SUM"',
-            color_range=COLOR_BREWER_BLUE_SCALE,
-            threshold=0.7,
-            get_weight="VL_MES",
-            pickable=True,
-        )
-
-        layer = pdk.Layer(
-            "ScatterplotLayer",
-            map_selected,
-            pickable=True,
-            opacity=0.8,
-            stroked=True,
-            filled=True,
-            radius_scale=400,
-            radius_min_pixels=1,
-            radius_max_pixels=100,
-            line_width_min_pixels=1,
-            get_position='coordinates',
-            get_radius='QT_MES',
-            get_fill_color=[255, 0, 0],
-            get_line_color=[255, 140, 0],
-        )
-
-        # Set the viewport location
-        view_state = pdk.ViewState(latitude=-14.086503, longitude=-50.9322067, zoom=3, min_zoom=3, bearing=0, pitch=0)
+    #     # Set the viewport location
+    #     view_state = pdk.ViewState(latitude=-14.086503, longitude=-50.9322067, zoom=3, min_zoom=3, bearing=0, pitch=0)
 
 
 
-        st.header("Mapa de Distribuição de Respiradores")
-        st.pydeck_chart(pdk.Deck(layers=[heat], initial_view_state=view_state))
+    #     st.header("Mapa de Distribuição de Respiradores")
+        # st.pydeck_chart(pdk.Deck(layers=[layer], initial_view_state=view_state))
 
-    if st.checkbox('Mostrar Tabela de Pedidos por Mês'):
-        st.subheader("Pedidos do mês")
-        st.write(map_selected.drop(columns = ['MES']))
+    if st.checkbox('Mostrar Gŕafico de Qnt. de Respiradores pedidos por Estado'):
+
+        df_month = map_df[map_df['MES'] == mes_selecionado]
+        fig_qnt_mes = px.bar(df_month, x='DESTINO', y='QT_MES',
+                hover_data=['VL_MES'],color='QT_MES',
+                labels={'QT_MES':'Qnt. de respiradores','VL_MES':'Valor Gasto em Reais (R$)', 'DESTINO':'Estado'},
+                height = 400, width = 1000,
+                color_continuous_scale= px.colors.sequential.Blugrn, title = f'Pedido de respiradores em {month_dict[mes_selecionado]}'
+                )
+
+        fig_qnt_mes.update(layout_coloraxis_showscale=False)
+        fig_qnt_mes.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+        fig_qnt_mes.update_xaxes(tickangle=45)
+        fig_qnt_mes.update_yaxes(visible=True)
+
+        st.plotly_chart(fig_qnt_mes, use_container_width=True)
+
+
+    if st.checkbox('Mostrar Gŕafico de valor gasto com respiradores por Estado'):
+
+        df_month = map_df[map_df['MES'] == mes_selecionado]
+        fig_val_mes = px.bar(df_month, x='DESTINO', y='VL_MES',
+                hover_data=['QT_MES'],color='VL_MES',
+                labels={'QT_MES':'Qnt. de respiradores','VL_MES':'Valor Gasto em Reais (R$)', 'DESTINO':'Estado'},
+                height = 400, width = 1000,
+                color_continuous_scale= px.colors.sequential.Blugrn, title = f'Valor gasto com respiradores em {month_dict[mes_selecionado]}'
+                )
+
+        fig_val_mes.update(layout_coloraxis_showscale=False)
+        fig_val_mes.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+        fig_val_mes.update_xaxes(tickangle=45)
+        fig_val_mes.update_yaxes(visible=True)
+
+        st.plotly_chart(fig_val_mes, use_container_width=True)
