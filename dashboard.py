@@ -7,15 +7,44 @@ import pydeck as pdk
 import plotly.express as px
 
 
+## FUNCTIONS ###################################################################################################################################
+
 #load data
 @st.cache(allow_output_mutation=True)
-def load_data2(file):
+def load_data(option):
 
-    df = pd.read_csv(file)
-    report_month = pd.read_csv(file)
-    df['coordinates'] = df[['longitude', 'latitude']].values.tolist()
+    if option == 'mes':
+        report = pd.read_csv('data_map2.csv')
 
-    if file == 'data_map2.csv':
+        return report
+
+    elif option == 'fornecedor':
+        df = pd.read_csv('distribuicao_respiradores.csv', delimiter = ';')
+        df = df[df['DATA DE ENTREGA'] != 'AGUARDANDO O MS']
+        df['DATA DE ENTREGA'] = df['DATA DE ENTREGA'].str.replace('/', '-', regex=False)
+        df['VALOR'] = df['VALOR'].str.replace(',', '.', regex=False).astype(float)
+        df['DATA'] = pd.to_datetime(df['DATA'], dayfirst = True)
+
+        gb = df.groupby('FORNECEDOR')
+
+        qt_tot = []
+        vl_tot = []
+        for i in range(len(df)):
+            st = gb.get_group(df['FORNECEDOR'].iloc[i])
+            qt_tot.append(st.agg({'QUANTIDADE': ['sum']}).QUANTIDADE.values[0])
+            vl_tot.append(st.agg({'VALOR': ['sum']}).VALOR.values[0])
+
+        df['QT_TOT'] = qt_tot
+        df['VL_TOT'] = vl_tot
+        df['PREÇO_MEDIO'] = (np.array(vl_tot)/np.array(qt_tot))
+
+        report = df.copy().drop(columns = ['ESTADO/MUNICIPIO','DATA','DESTINO','TIPO','DESTINATARIO','DATA DE ENTREGA','UF'])
+        report2 = report.drop(columns = ['QUANTIDADE','VALOR']).drop_duplicates().round(1)
+
+        return report2
+
+    elif option == 'pedidoTot':
+        report_month = pd.read_csv('data_map2.csv')
         gb = report_month.groupby('DESTINO')
 
         qt_tot = []
@@ -33,20 +62,102 @@ def load_data2(file):
         report2 = report.sort_values(by='PREÇO_MEDIO', ascending=True)
         report3 = report2.round(1)
         report3.drop_duplicates(inplace= True)
-
+        
         return report3
+    
+    elif option == 'anomalia':
+        print('Under construction!')
+        return 'Under construction!'
+    else:
+        print('Wrong Option!')
+        return 'Wrong Option!'
 
-    return df
 
-@st.cache(allow_output_mutation=True)
-def load_data(file):
+def plot_fornecedores():
+    report2 = load_data('fornecedor')
 
-    df = pd.read_csv(file)
-    df['coordinates'] = df[['longitude', 'latitude']].values.tolist()
+    fig2 = px.bar(report2, x='FORNECEDOR', y='PREÇO_MEDIO',
+                hover_data=['QT_TOT','VL_TOT'],color='PREÇO_MEDIO',
+                labels={'QT_TOT':'Qnt. de respiradores','VL_TOT':'Valor total dos respiradores','PREÇO_MEDIO':'Valor Médio em reais (R$)', 'FORNECEDOR':'Fornecedor'},
+                height = 400, width = 1000,
+                color_continuous_scale= px.colors.sequential.Blugrn
+                )
+
+    fig2.update(layout_coloraxis_showscale=False)
+    fig2.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+    fig2.update_xaxes(tickangle=45)
+    fig2.update_yaxes(visible=True)
+    st.plotly_chart(fig2, use_container_width=True)
 
 
-    return df
+def plot_qnt_mes(mes):
 
+    month_dict = {4 : 'Abril', 5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto'}
+
+    map_df = load_data('mes')
+
+    mes_selec = mes
+
+    df_month = map_df[map_df['MES'] == mes_selec]
+    fig_qnt_mes = px.bar(df_month, x='DESTINO', y='QT_MES',
+            hover_data=['VL_MES'],color='QT_MES',
+            labels={'QT_MES':'Qnt. de respiradores','VL_MES':'Valor Gasto em Reais (R$)', 'DESTINO':'Estado'},
+            height = 400, width = 1000,
+            color_continuous_scale= px.colors.sequential.Blugrn, title = f'Pedido de respiradores em {month_dict[mes_selec]}'
+            )
+
+    fig_qnt_mes.update(layout_coloraxis_showscale=False)
+    fig_qnt_mes.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+    fig_qnt_mes.update_xaxes(tickangle=45)
+    fig_qnt_mes.update_yaxes(visible=True)
+
+    st.plotly_chart(fig_qnt_mes, use_container_width=True)
+
+
+def plot_val_mes(mes):
+
+    month_dict = {4 : 'Abril', 5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto'}
+
+    map_df = load_data('mes')
+
+    mes_selecionado = mes
+
+    df_month = map_df[map_df['MES'] == mes_selecionado]
+    fig_val_mes = px.bar(df_month, x='DESTINO', y='VL_MES',
+            hover_data=['QT_MES'],color='VL_MES',
+            labels={'QT_MES':'Qnt. de respiradores','VL_MES':'Valor Gasto em Reais (R$)', 'DESTINO':'Estado'},
+            height = 400, width = 1000,
+            color_continuous_scale= px.colors.sequential.Blugrn, title = f'Valor gasto com respiradores em {month_dict[mes_selecionado]}'
+            )
+
+    fig_val_mes.update(layout_coloraxis_showscale=False)
+    fig_val_mes.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+    fig_val_mes.update_xaxes(tickangle=45)
+    fig_val_mes.update_yaxes(visible=True)
+
+    st.plotly_chart(fig_val_mes, use_container_width=True)
+
+
+def plot_val_tot():
+
+    report3 = load_data('pedidoTot')
+
+    fig = px.bar(report3, x='DESTINO', y='PREÇO_MEDIO',
+                    hover_data=['QT_TOT','VL_TOT'],color='PREÇO_MEDIO',
+                    labels={'QT_TOT':'Qnt. de respiradores comprados','VL_TOT':'Valor total gasto com respiradores','PREÇO_MEDIO':'Valor Médio em reais (R$)', 'DESTINO':'Estado'},
+                    height = 400, width = 1000,
+                    color_continuous_scale= px.colors.sequential.Blugrn
+                    )
+
+    fig.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+    fig.update(layout_coloraxis_showscale=False)
+    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+    fig.update_xaxes(tickangle=45)
+    fig.update_yaxes(visible=True)
+    st.plotly_chart(fig, use_container_width=True)
+
+
+##########################################################################################################################################################################
 # Dashboard
 
 st.title("Portal da Transparência COVID-19")
@@ -63,103 +174,14 @@ st.sidebar.markdown(
     Escolha o que deseja observar
     """
 )
-report3 = load_data2('data_map2.csv')
-
-fig = px.bar(report3, x='DESTINO', y='PREÇO_MEDIO',
-                hover_data=['QT_TOT','VL_TOT'],color='PREÇO_MEDIO',
-                labels={'QT_TOT':'Qnt. de respiradores comprados','VL_TOT':'Valor total gasto com respiradores','PREÇO_MEDIO':'Valor Médio em reais (R$)', 'DESTINO':'Estado'},
-                height = 400, width = 1000,
-                color_continuous_scale= px.colors.sequential.Blugrn
-                )
-
-fig.update_traces(texttemplate='%{text:.2s}', textposition='outside')
-fig.update(layout_coloraxis_showscale=False)
-fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
-fig.update_xaxes(tickangle=45)
-fig.update_yaxes(visible=True)
-st.plotly_chart(fig, use_container_width=True)
-
-#st.sidebar.info(f'Foram carregadas {df.shape[0]} linhas')
-if st.sidebar.checkbox('Mostrar distribuição de respiradores'):
-    months = [4,5,6,7,8]
-    month_dict = {4 : 'Abril', 5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto'}
-
-    # Load Data
-    df = load_data('dados_dash2.csv')
-    map_df = load_data('data_map2.csv')
 
 
-    # Slide bar do mês
-    mes_selecionado = st.slider('Selecione o mês', 4, 8, 8)
-    df.DATA = pd.to_datetime(df.DATA)
-    df_selected = df[df.DATA.dt.month == mes_selecionado]
-    map_selected = map_df[map_df.MES == mes_selecionado]
-
-    if st.checkbox('Mostrar Tabela de Dados'):
-        st.header("Tabela de Dados")
-        st.write(df_selected.drop(columns = ['latitude', 'longitude']))
-
-    # Mapa
-
-    # if st.checkbox('Mostrar Mapa # de compras por Estado'):
-
-    #     # Define a layer to display on a map
-    #     layer = pdk.Layer(
-    #         "ScatterplotLayer",
-    #         map_selected,
-    #         pickable=True,
-    #         opacity=0.8,
-    #         stroked=True,
-    #         filled=True,
-    #         radius_scale=400,
-    #         radius_min_pixels=1,
-    #         radius_max_pixels=100,
-    #         line_width_min_pixels=1,
-    #         get_position='coordinates',
-    #         get_radius='QT_MES',
-    #         get_fill_color=[0, 0, 255],
-    #         get_line_color=[0, 0, 0],
-    #     )
-
-    #     # Set the viewport location
-    #     view_state = pdk.ViewState(latitude=-14.086503, longitude=-50.9322067, zoom=3, min_zoom=3, bearing=0, pitch=0)
+plot_fornecedores()
 
 
+plot_val_tot()
 
-    #     st.header("Mapa de Distribuição de Respiradores")
-        # st.pydeck_chart(pdk.Deck(layers=[layer], initial_view_state=view_state))
+mes = st.slider('Escolha o mês:', 4,8,8)
+plot_val_mes(mes)
 
-    if st.checkbox('Mostrar Gŕafico de Qnt. de Respiradores pedidos por Estado'):
-
-        df_month = map_df[map_df['MES'] == mes_selecionado]
-        fig_qnt_mes = px.bar(df_month, x='DESTINO', y='QT_MES',
-                hover_data=['VL_MES'],color='QT_MES',
-                labels={'QT_MES':'Qnt. de respiradores','VL_MES':'Valor Gasto em Reais (R$)', 'DESTINO':'Estado'},
-                height = 400, width = 1000,
-                color_continuous_scale= px.colors.sequential.Blugrn, title = f'Pedido de respiradores em {month_dict[mes_selecionado]}'
-                )
-
-        fig_qnt_mes.update(layout_coloraxis_showscale=False)
-        fig_qnt_mes.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
-        fig_qnt_mes.update_xaxes(tickangle=45)
-        fig_qnt_mes.update_yaxes(visible=True)
-
-        st.plotly_chart(fig_qnt_mes, use_container_width=True)
-
-
-    if st.checkbox('Mostrar Gŕafico de valor gasto com respiradores por Estado'):
-
-        df_month = map_df[map_df['MES'] == mes_selecionado]
-        fig_val_mes = px.bar(df_month, x='DESTINO', y='VL_MES',
-                hover_data=['QT_MES'],color='VL_MES',
-                labels={'QT_MES':'Qnt. de respiradores','VL_MES':'Valor Gasto em Reais (R$)', 'DESTINO':'Estado'},
-                height = 400, width = 1000,
-                color_continuous_scale= px.colors.sequential.Blugrn, title = f'Valor gasto com respiradores em {month_dict[mes_selecionado]}'
-                )
-
-        fig_val_mes.update(layout_coloraxis_showscale=False)
-        fig_val_mes.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
-        fig_val_mes.update_xaxes(tickangle=45)
-        fig_val_mes.update_yaxes(visible=True)
-
-        st.plotly_chart(fig_val_mes, use_container_width=True)
+plot_qnt_mes(mes)
