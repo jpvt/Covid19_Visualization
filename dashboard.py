@@ -85,6 +85,19 @@ def load_data(option):
         baratos = df[df['PREÇO_MEDIO_REG'] < 20000]
 
         return caros, baratos
+    
+    elif option == 'respInit':
+
+        hab = pd.read_csv('resps.csv').drop(columns=['Unnamed: 0'])
+        hab['Respiradores/Pop'] = np.array(hab['Respiradores'].values)/(np.array(hab['População'].values)/100000)
+        hab['Respiradores/Pop'] = hab['Respiradores/Pop'].apply(np.floor).astype(int)
+
+        return hab
+
+    elif option == 'respMes':
+
+        hab = pd.read_csv('resps.csv').drop(columns=['Unnamed: 0'])
+        return hab
     else:
         print('Wrong Option!')
         return 'Wrong Option!'
@@ -95,9 +108,9 @@ def plot_fornecedores():
 
     fig2 = px.bar(report2, y='FORNECEDOR', x='PREÇO_MEDIO',
                 hover_data=['QT_TOT','VL_TOT'],color='PREÇO_MEDIO',
-                labels={'QT_TOT':'Qnt. de respiradores','VL_TOT':'Valor total dos respiradores','PREÇO_MEDIO':'Valor Médio em reais (R$)', 'FORNECEDOR':'Fornecedor'},
+                labels={'QT_TOT':'Qnt. de respiradores','VL_TOT':'Valor total dos respiradores','PREÇO_MEDIO':'Valor Médio(R$)', 'FORNECEDOR':'Fornecedor'},
                 height = 800, width = 800,
-                color_continuous_scale= px.colors.sequential.Blugrn
+                color_continuous_scale= px.colors.sequential.Teal, title = 'Preço Médio por fornecedor'
                 )
 
     fig2.update(layout_coloraxis_showscale=False)
@@ -120,7 +133,7 @@ def plot_qnt_mes(mes):
             hover_data=['VL_MES'],color='QT_MES',
             labels={'QT_MES':'Qnt. de respiradores','VL_MES':'Valor Gasto em Reais (R$)', 'DESTINO':'Estado'},
             height = 400, width = 1000,
-            color_continuous_scale= px.colors.sequential.Blugrn, title = f'Pedido de respiradores em {month_dict[mes_selec]}'
+            color_continuous_scale= px.colors.sequential.Teal, title = f'Pedido de respiradores em {month_dict[mes_selec]}'
             )
 
     fig_qnt_mes.update(layout_coloraxis_showscale=False)
@@ -144,7 +157,7 @@ def plot_val_mes(mes):
             hover_data=['QT_MES'],color='VL_MES',
             labels={'QT_MES':'Qnt. de respiradores','VL_MES':'Valor Gasto em Reais (R$)', 'DESTINO':'Estado'},
             height = 400, width = 1000,
-            color_continuous_scale= px.colors.sequential.Blugrn, title = f'Valor gasto com respiradores em {month_dict[mes_selecionado]}'
+            color_continuous_scale= px.colors.sequential.Teal, title = f'Valor gasto com respiradores em {month_dict[mes_selecionado]}'
             )
 
     fig_val_mes.update(layout_coloraxis_showscale=False)
@@ -163,7 +176,7 @@ def plot_val_tot():
                     hover_data=['QT_TOT','VL_TOT'],color='PREÇO_MEDIO',
                     labels={'QT_TOT':'Qnt. de respiradores comprados','VL_TOT':'Valor total gasto com respiradores','PREÇO_MEDIO':'Valor Médio em reais (R$)', 'DESTINO':'Estado'},
                     height = 400, width = 1000,
-                    color_continuous_scale= px.colors.sequential.Blugrn
+                    color_continuous_scale= px.colors.sequential.Teal
                     )
 
     fig.update_traces(texttemplate='%{text:.2s}', textposition='outside')
@@ -181,6 +194,55 @@ def show_anomalias():
     if st.checkbox('Ver respiradores que foram comprados por um valor baixo'):
         st.write(baratos)
 
+
+def plot_resp_mes(month):
+    hab = load_data('respMes')
+
+
+    month_dict = {4 : 'Abril', 5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto'}
+    name = f'{month_dict[month]}/Pop'
+
+    hab[name] = np.array(hab[month_dict[month]].values)/(np.array(hab['População'].values)/100000)
+    hab[name] = hab[name].apply(np.floor).astype(int)
+
+    #df_month = report_month[report_month['MES'] == month]
+
+    figmes = px.bar(hab, x='Estado', y=name,
+            hover_data=['População','Respiradores'],color=name,
+            labels={'População':'Número de Habitantes','Respiradores':'Número de Respiradores',name:'Respiradores/100 mil habitantes'},
+            height = 400, width = 1000,
+            color_continuous_scale= px.colors.sequential.Teal,
+            title = f'Quantidade de respiradores em {month_dict[month]}'
+        )
+
+    figmes.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+    figmes.update(layout_coloraxis_showscale=False)
+    figmes.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+    figmes.update_xaxes(tickangle=45)
+    figmes.update_yaxes(visible=True)
+    st.plotly_chart(figmes, use_container_width=True)
+
+def plot_resp_tot():
+
+    hab = load_data('respInit')
+
+
+    figtot = px.bar(hab, x='Estado', y='Respiradores/Pop',
+             hover_data=['População','Respiradores'],color='Respiradores/Pop',
+             labels={'População':'Número de Habitantes','Respiradores':'Número de Respiradores','Respiradores/Pop':'Respiradores/100 mil habitantes'},
+             height = 400, width = 1000,
+             color_continuous_scale= px.colors.sequential.Teal,
+             title = f'Quantidade de respiradores antes da pandemia'
+            )
+
+    figtot.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+    figtot.update(layout_coloraxis_showscale=False)
+    figtot.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+    figtot.update_xaxes(tickangle=45)
+    figtot.update_yaxes(visible=True)
+    st.plotly_chart(figtot, use_container_width=True)
+
+
 ##########################################################################################################################################################################
 # Dashboard
 
@@ -195,19 +257,24 @@ st.markdown("""
 )
 
 
-st.sidebar.title("Tipos de Análise")
-st.sidebar.markdown(
+st.header("Tipos de Análise")
+st.markdown(
     """
     Aqui você pode selecionar que tipo de análise sobre a distribuição de respiradores você deseja visualizar. Basta escolher na caixa abaixo.
     """
 )
 
 
-analise_box = st.sidebar.selectbox('Escolha:', ('Análise de Gasto Total','Análise de Fornecedores e Anomalias','Análise de Gasto Mensal'))
 
-if analise_box == 'Análise de Gastos Totais':
+analise_box = st.selectbox('Escolha:', ('Análise de Gasto Total','Análise de Fornecedores e Anomalias','Análise de Gasto Mensal'))
+
+if analise_box == 'Análise de Gasto Total':
 
     plot_val_tot()
+
+    plot_resp_tot()
+
+    plot_resp_mes(8)
 
 elif analise_box == 'Análise de Gasto Mensal':
 
@@ -215,6 +282,7 @@ elif analise_box == 'Análise de Gasto Mensal':
     month_dict = {'Abril':4, 'Maio':5, 'Junho':6, 'Julho':7, 'Agosto':8}
     mes = month_dict[box]
 
+    plot_resp_mes(mes)
     plot_val_mes(mes)
     plot_qnt_mes(mes)
 
