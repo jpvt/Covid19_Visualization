@@ -42,7 +42,6 @@ def load_data2(file):
 def load_data(file):
 
     df = pd.read_csv(file)
-    report_month = pd.read_csv(file)
     df['coordinates'] = df[['longitude', 'latitude']].values.tolist()
 
 
@@ -53,7 +52,7 @@ def load_data(file):
 st.title("Portal da Transparência COVID-19")
 st.markdown(
     """
-    Olá :)
+    Deu certo aí Pardal ?
     """
 )
 
